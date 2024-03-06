@@ -1,0 +1,147 @@
+;----------------------------------------
+;EE310 Assignment 4, temperature response 
+;----------------------------------------
+;Program details
+;----------------------------------------
+;Purpose:	Program compares set temperature and ambient
+;		temperature and turns on cooling or heating system 
+;Dependencies:	compiler,config
+;Compiler:	<xc.inc>
+;Author:	Cameron deLeeuw
+;INPUTS:	refTemp, measuredTemp
+;OUTPUTS:	PORTD 1,2
+;Date:		3/6/2024
+;Versions:	
+    ;V1.0 - created start, begin, and setregs functions. Err compiling due to incorrect syntax of fucntion,
+    ;	    and binary operand. (3/1/2024)
+    ;V1.1 - Created comparison, heating, cooling and .....  (3/2/2024)
+    ;V1.2 - Created function to convert hex value into decimal value, each integer of decimal value 
+    ;	    of measTemp and refTemp is stored in 3 registers. (3/3/2024)
+    ;v1.3 - Finished function(s) to store decimal values of refTemp and measTemp into registers
+    ;	    60,61,62 and 70,71,72 respectivly. (3/5/2024)
+    
+;NOTES
+;FROM V1.3 -	#define only works for the values placed in registers. If the  
+;		instruction has multiple arugments #define DOES NOT WORK.   
+;		Registers DO NOT UPDATE if searched in the filter section.
+    
+    ;INITIALIZATIONS
+#include "C:\Users\624ca\MPLABXProjects\Assignment4_tempResponse.X\config_01.inc"
+#include <xc.inc>
+  
+    PSECT absdata,abs,ovrld
+    
+    ORG 0
+    GOTO START
+    ORG	0x20
+
+;MAIN
+;--------------------------------------------------------------------------
+START:
+	measTempREG EQU	0X20
+	refTempREG  EQU	0X21
+	measTemp    EQU 20
+	refTemp	    EQU 15
+	contReg	    EQU	0x22
+	COUNTREG    EQU	0X52
+	DIFFREG	    EQU	0X51
+	MOVLW	0b11111100  ;FIRST 2 PINS OF PORTD ARE OUTPUT
+	MOVWF	TRISD,0
+	GOTO	BEGIN
+	
+BEGIN:	
+	MOVLW	0	     ;CLEAR WORKING REG
+	MOVWF	COUNTREG,0   ;CLEAR COUNTING REG
+	MOVWF	DIFFREG,0    ;CLEAR DIFFREG
+	CALL	SETREGS	     ;STORE REFRENCE TEMP AND  AND MEASURED TEMP IN REG 21 & 20
+	MOVLW	10
+	CPFSGT	measTempREG,0	;F>W IF MEASTEMP > 10, SKIP NEXT LINE 
+	GOTO	LINE1	
+	CALL	STOREMEASTEMP	;HEX TO DECIMAL FOR MEASTEM
+LINE2:	CALL	STOREREFTEMP ;HEX TO DECIMAL FOR REFTEMP
+	MOVLW	measTemp
+	CPFSEQ	refTempREG,1	;SKIP NEXT LINE IF ==, REPEAT BEGIN (temp is perfect)
+	CALL	COMPARISON
+	GOTO	FIN
+	CALL	IFEQU
+	
+	;GOTO	BEGIN	;REPEAT BEGIN FOR UP TO DATE VALUES OF TEMPS (N/A)
+	
+;FUNCTIONS
+;----------------------------------------------------------------------------
+SETREGS:
+	MOVLW	refTemp
+	MOVWF	refTempREG,0	;REFTEMP PLACED INTO REG 21
+	MOVLW	measTemp
+	MOVWF	measTempREG,0	;MEASTEMP PLACED INTO REG 20, ALSO IN WORKING
+	RETURN
+	
+COMPARISON:
+	MOVLW	measTemp
+	CPFSGT	refTempREG,0	;F<W SKIP IF TRUE (HEATING ON IF TRUE)
+	CPFSLT	refTempREG,0	;F>W SKIP IS TRUE (COOLING ON IF TRUE)
+	CALL	COOLING
+	CPFSGT	refTempREG,0
+	CALL	HEATING
+	RETURN
+	
+COOLING:
+	MOVLW	2
+	MOVWF	contReg,0
+	MOVLW	0b00000001
+	MOVWF	PORTD,0
+	RETURN
+HEATING:
+	MOVLW	1
+	MOVWF	contReg,0
+	MOVLW	0b00000010
+	MOVWF	PORTD,0
+	RETURN
+IFEQU:
+	MOVLW	0
+	MOVWF	contReg,0
+	RETURN
+	
+STOREREFTEMP:
+    MOVLW   0
+    MOVWF   0X51
+    MOVWF   0X52
+    MOVWF   0X50
+    MOVLW   refTemp
+    MOVWF   DIFFREG,0	;MOVED REFTEMP VALUE TO 
+    MOVLW   10
+AGAIN:
+	INCF    COUNTREG,1,0	;WILL FIND FIRST INTEGER OF THE DECIMAL NUMBER
+	SUBWF   DIFFREG,1,0
+    BNN     AGAIN		;POSIVIVE NUMBER REPEATS LOOP, NEGATIVE NUMBER ENDS LOOP
+    ADDWF   DIFFREG,1,0		;ADDS 10 AFTER GOING INTO NEGATIVE TO RETAIN FIRST INTEGER OF DECIMAL NUMBER AFTR LOOP
+    MOVFF   DIFFREG,0X61    
+    DECF    COUNTREG,1,0	;DECREMENT TO RETAIN SECOND INTEGER OF DECIMAL NUMBER AFTR LOOP
+    MOVFF   COUNTREG,0X62
+RETURN
+    
+STOREMEASTEMP:
+    MOVLW   0
+    MOVWF   COUNTREG,0
+    MOVWF   DIFFREG,0
+    MOVLW   measTemp
+    MOVWF   DIFFREG,0	;MOVED MEASTEMP VALUE TO 0X51
+    MOVLW   10
+AGAIN2:
+	INCF    COUNTREG,1,0	;WILL FIND FIRST INTEGER OF THE DECIMAL NUMBER
+	SUBWF   DIFFREG,1,0
+    BNN     AGAIN2		;POSIVIVE NUMBER REPEATS LOOP, NEGATIVE NUMBER ENDS LOOP
+    ADDWF   DIFFREG,1,0		;ADDS 10 AFTER GOING INTO NEGATIVE TO RETAIN FIRST INTEGER OF DECIMAL NUMBER AFTR LOOP
+    MOVFF   DIFFREG,0X71    
+    DECF    COUNTREG,1,0	;DECREMENT TO RETAIN SECOND INTEGER OF DECIMAL NUMBER AFTR LOOP
+    MOVFF   COUNTREG,0X72
+RETURN
+
+LINE1:
+    MOVLW   10
+    MOVFF   measTempREG,0X72
+    GOTO    LINE2
+    
+FIN:
+END
+
