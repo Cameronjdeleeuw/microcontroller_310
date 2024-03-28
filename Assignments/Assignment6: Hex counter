@@ -25,8 +25,8 @@
 ;Initalization
     PSECT absdata,abs,ovrld
     
-    INNERLOOP	EQU 1 //SHOULD BE 255
-    OUTERLOOP	EQU 1  //SHOULD BE 3
+    INNERLOOP	EQU 255 //SHOULD BE 255
+    OUTERLOOP	EQU 3  //SHOULD BE 3
     
     ORG 0
     GOTO setup
