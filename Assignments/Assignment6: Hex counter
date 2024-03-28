@@ -14,7 +14,8 @@
 ;Versions:	
     ;V1.0 -  Created functions to set pointers, load output registers, and button status.(3/20/2024)
     ;V1.1 -  Created functions to initalize input and ouput ports (3/25/24)
-    ;v1.2 -  Completed code (3/27/24)=
+    ;v1.2 -  Completed code (3/27/24)
+    ;v1.3 -  Remade aspects of code to support only one pointer counting up and down. (3/27/24)
 ;NOTES
 ;FROM V1.1 - 
     
@@ -33,22 +34,15 @@
     ORG	0x20
 
 setup:
-	    RCALL	setPointers
 	    RCALL	_setupPortD
 	    RCALL	_setupPortB
-	    RCALL	resetDisplay	;resets display to 0
 	    RCALL	loadOutputREGS	;Loads REGS 20-2F with equivilant of diplaying 0-F on 7 segment display
-	    NOP
-	    
+	    RCALL	resetDisplay	;resets display to 0
+	    RCALL	initialPress
 mainLoop: 
 	    RCALL	resetPointers
 	    RCALL	buttonsStatus
 	    GOTO	mainLoop
-    
-setPointers:
-	LFSR	0,0X20 ;this pointer will load REGS with binary equivialnt of 0-F for 7 segment AND act as the counter from 0-F
-	LFSR	1,0X2F ;this pointer will act as the counter from F-0
-	RETURN
 	
 _setupPortD:
     BANKSEL	PORTD ;
@@ -74,11 +68,10 @@ _setupPortB:
     MOVWF	TRISB ;
     RETURN
 	
-resetDisplay:
-	MOVFF	0X20,PORTD ;should display 0 on startup
-	RETURN
+
 	
 loadOutputREGS:
+	LFSR	0,0X20
 	MOVLW	0X3F	    ;63 on OUTPUT bus
 	MOVWF	POSTINC0,0
 	MOVLW	0X06
@@ -111,26 +104,48 @@ loadOutputREGS:
 	MOVWF	POSTINC0,0
 	MOVLW	0X71
 	MOVWF	POSTINC0,0
-	LFSR	0,0X20
+	//LFSR	0,0X20
 	MOVLW	0XFF	;Next 4 lines are used to place values before and after the registers		;to 
-	MOVWF	0X30	;that hold the hex values for the segmented display, these values
-	MOVLW	0XFF    ;tell the pointers when to reset
+	MOVWF	0X30	;that hold the hex values for the segmented display, these values 
+	MOVLW	0X1F		;tell the pointers when to reset
 	MOVWF	0X1F
-	MOVFF	0X20,PORTD  ;Display starts with 0
+	//MOVFF	0X20,PORTD  ;Display starts with 0
 	RETURN
 	
+resetDisplay:
+	MOVFF	0X20,PORTD ;should display 0 on startup
+	RETURN
+	
+initialPress:
+ini:	MOVLW	1
+	CPFSEQ	PORTB
+	GOTO	NXT
+	LFSR	0,0X20
+NXT:	MOVLW	2
+	CPFSEQ	PORTB
+	GOTO	NXT2
+	LFSR	0,0X2F
+NXT2:	MOVLW	0
+	CPFSEQ	PORTB
+	GOTO	NXT3
+	GOTO	ini
+NXT3:	RETURN	
+	
 resetPointers:
-	MOVLW	0XFF	;When counting up IF pointer has made it to REG2F = F, reset to REG20 = 0
+	MOVLW	0XFF	;When counting up IF pointer has made it beyond REG2F = F, reset to REG20 = 0
 	CPFSEQ	INDF0
 	GOTO	SKP1
 	LFSR	0,0X20
     SKP1:	
-	MOVLW	0XFF	;When counting down IF pointer has made it to REG20 = 0, reset to REG2F = F
-	CPFSEQ	INDF1
+	MOVLW	0X1F	;When counting down IF pointer has made it beyond REG20 = 0, reset to REG2F = F
+	CPFSEQ	INDF0
 	GOTO	SKP2
-	LFSR	1,0X2F
+	LFSR	0,0X2F
     SKP2: 	
 	RETURN
+	
+	
+
 	
 buttonsStatus:
 	    MOVLW	1	
@@ -146,49 +161,46 @@ buttonsStatus:
     NEXT2:  MOVLW	3
 	    CPFSEQ	PORTB	;Checks if button 3 is pressed (reset)
 	    GOTO	endOfCompare
-	    RCALL	stopAndReset
+	    RCALL	stopAndReset	
     endOfCompare:
 RETURN
-	
-
-	    
+	 
 	countDown:
-	    LFSR	0,0X20	    ;Resets count up pointer
-	    MOVLW	0
-	    CPFSEQ	PORTB	    ;If button 2 is depressed after being pressed, call buttonsEQUzero
-	    GOTO	BnotZero
-	    RCALL	buttonsEQUzero
-	    RETURN
-	    BnotZero:   
-	    CALL looper
-	    MOVFF   POSTDEC1,PORTD  ;Moves value from pointer to PORTD and decrements
+	    
+	     MOVLW   1
+	     CPFSEQ  0X50
+	     GOTO    HIP
+	     MOVFF   POSTDEC0,PORTD
+	     MOVFF   POSTDEC0,PORTD
+    HIP:    
+	    MOVFF   POSTDEC0,PORTD  ;Moves value from pointer to PORTD and decrements
+	    CALL delay
+	     MOVLW   2
+	     MOVWF   0X50 
 	RETURN
 	
 	countUp:
-	    LFSR	1,0X2F	    ;Resets count down pointer
-	    MOVLW	0
-	    CPFSEQ	PORTB	    ;If button 1 is depressed after being pressed, call buttonsEQUzero
-	    GOTO	BnotZero1
-	    RCALL	buttonsEQUzero
-	    RETURN
-	    BnotZero1:
-	    MOVFF   POSTINC0,PORTD  ;Moves value from pointer to PORTD and incriments
-	    CALL looper
+	    
+	     MOVLW   2
+	     CPFSEQ  0X50
+	     GOTO    HIP2
+	     MOVFF   PREINC0,PORTD
+    HIP2:    MOVFF   POSTINC0,PORTD  ;Moves value from pointer to PORTD and incriments
+	    CALL delay
+	    
+	     MOVLW   1
+	     MOVWF   0X50
 	RETURN
-	
-	    buttonsEQUzero:		;When button that was pused is let go, the last number displayed stays displayed
-		MOVFF   INDF0,PORTD
-		MOVFF   INDF1,PORTD
-	    RETURN	    
+	    
 	
 	stopAndReset:	    ;Pointers are reset & 7segment displays 0
 	  LFSR	0,0X20
 	  LFSR	1,0X2F
 	  MOVFF	0X20,PORTD
-	  CALL	looper
+	  CALL	delay
 	RETURN
 	
-	looper:			;Delay function
+	delay:			;Delay function
 	    MOVLW   INNERLOOP
 	    MOVWF   0X10
 	    MOVWF   0X11
@@ -209,3 +221,5 @@ RETURN
 	    
 END
 	    
+
+
