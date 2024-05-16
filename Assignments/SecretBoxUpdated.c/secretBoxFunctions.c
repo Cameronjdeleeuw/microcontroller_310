@@ -161,10 +161,10 @@ void displayNums()
         //display numPressed on display
         for (int i=0; i<=3; i++)
         {
-            PORTA = power(i); //make own power function
+            PORTB = power(i); //make own power function
             PORTD = hexToDigit_MAT[0][i];
             __delay_us(1000); //delay 1mSeconds
-            PORTA = 0;
+            PORTB = 0;
         }
         
         //checks every loop if a 5 digit was pressed, if true, reset
@@ -178,19 +178,19 @@ void displayNums()
 
 int power(int j)
 {
-    if (j == 1)
+    if (j == 0)
     {
         return 1;
     }
-    if (j == 2)
+    if (j == 1)
     {
         return 2;
     }
-    if (j == 3)
+    if (j == 2)
     {
         return 4;
     }
-    if (j == 4)
+    if (j == 3)
     {
         return 8;
     }
@@ -239,89 +239,89 @@ int readKeypad()
             return currentButton;
         }
         */
-        PORTB = 0b00000010;
-        if(PORTB == 0b10000010) {
+        PORTA = 0b00000010;
+        if(PORTA == 0b10000010) {
             currentButton = three;  //ASCII equivilant of 3
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b01000010) {
+        if(PORTA == 0b01000010) {
             currentButton = six;  //ASCII equivilant of 6
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b00100010) {
+        if(PORTA == 0b00100010) {
             currentButton = nine;  //ASCII equivilant of 9
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b00010010) {
+        if(PORTA == 0b00010010) {
             currentButton = pound;  //ASCII equivilant of #(equ)
             //whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        PORTB = 0b00000100;
-        if(PORTB == 0b10000100) {
+        PORTA = 0b00000100;
+        if(PORTA == 0b10000100) {
             currentButton = two;  //ASCII equivilant of 2
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b01000100) {
+        if(PORTA == 0b01000100) {
             currentButton = five;  //ASCII equivilant of 5
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b00100100) {
+        if(PORTA == 0b00100100) {
             currentButton = eight;  //ASCII equivilant of 8
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b00010100) {
+        if(PORTA == 0b00010100) {
             currentButton = zero;  //ASCII equivilant of 0
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        PORTB = 0b00001000;
-        if(PORTB == 0b10001000) {
+        PORTA = 0b00001000;
+        if(PORTA == 0b10001000) {
             currentButton = one;  //ASCII equivilant of 1
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b01001000) {
+        if(PORTA == 0b01001000) {
             currentButton = four;  //ASCII equivilant of 4
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b00101000) {
+        if(PORTA == 0b00101000) {
             currentButton = seven;  //ASCII equivilant of 7
             whichDigit++;
             __delay_ms(250);
             return currentButton;
         }
-        if(PORTB == 0b00011000) {
+        if(PORTA == 0b00011000) {
             currentButton = star;  //ASCII equivilant of *(result)
             //whichDigit++;
             __delay_ms(250);
             reset();
             return currentButton;
         }
-        PORTB = 0b00000000;
+        PORTA = 0b00000000;
         return -1;
 }
 
 void testDisplay()
 {
-            PORTA = 1;
+            PORTB = 1;
             PORTD = 0b11000001;
             __delay_ms(50);
             PORTD = 0b11000010;
@@ -336,7 +336,7 @@ void testDisplay()
             __delay_ms(50);
             PORTD = 0b11000001;
             __delay_ms(50);
-            PORTA = 2;
+            PORTB = 2;
             PORTD = 0b11000001;
             __delay_ms(50);
             PORTD = 0b11000010;
@@ -351,7 +351,7 @@ void testDisplay()
             __delay_ms(50);
             PORTD = 0b11000001;
             __delay_ms(50);
-            PORTA = 4;
+            PORTB = 4;
             PORTD = 0b11000001;
             __delay_ms(50);
             PORTD = 0b11000010;
@@ -366,7 +366,7 @@ void testDisplay()
             __delay_ms(50);
             PORTD = 0b11000001;
             __delay_ms(50);
-            PORTA = 8;
+            PORTB = 8;
             PORTD = 0b11000001;
             __delay_ms(50);
             PORTD = 0b11000010;
